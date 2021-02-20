@@ -1,159 +1,120 @@
-const { Model } = require("sequelize");
-const { Sequelize, DataTypes } = require("sequelize");
-// const { sequelize, task, person } = require("./models");
-// console.log(task.findAll().then(console.log));
+const { Op, Sequelize, Model, DataTypes } = require("sequelize");
 
-// task.findOne().then(console.log);
-// task.create({ title: "test the code", iscompleted: false }).then(console.log);
-
-// task.findAll().then(console.log);
+const uri = "postgres://bob:password@localhost/aisha";
 
 const bootstrap = async () => {
   try {
-    const uri = "postgres://bob:password@localhost/aisha";
     const sequelize = new Sequelize(uri);
 
-    // person model
-    class Person extends Model {}
-    Person.init(
+    class User extends Model {}
+    User.init(
       {
-        name: DataTypes.STRING,
-        title: DataTypes.STRING,
-        id: {
-          type: DataTypes.UUID,
-          primaryKey: true,
-          allowNull: false,
-          defaultValue: DataTypes.UUIDV4,
-        },
+        firstName: DataTypes.TEXT,
+        lastName: DataTypes.STRING,
       },
-      {
-        sequelize,
-        modelName: "person",
-        // freezeTableName: true,
-      }
+      { sequelize, modelName: "user" }
     );
 
-    const Task = sequelize.define(
-      "task",
-      {
-        id: {
-          type: DataTypes.UUID,
-          primaryKey: true,
-          allowNull: false,
-          defaultValue: DataTypes.UUIDV4,
-        },
-        title: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
+    const Task = sequelize.define("task", {
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
       },
-      {
-        // freezeTableName: false,
-        // tableName: "task",
-      }
-    );
+      isCompleted: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+    });
 
-    // Task.belongsTo(Person, {
+    // Task.belongsTo(User, {});
+    // User.hasOne(Task, {
     //   foreignKey: {
     //     allowNull: false,
     //     name: "owner",
     //   },
+    //   onDelete: "CASCADE",
     // });
-    // Person.hasOne(Task, {
-    //   foreignKey: {
-    //     allowNull: false,
-    //     name: "owner",
-    //   },
-    // });
-    Task.belongsTo(Person, {
+
+    User.hasMany(Task, {
       foreignKey: {
         allowNull: false,
         name: "owner",
       },
     });
-    // Person.hasMany(Task, {
-    //   foreignKey: {
-    //     name: "owner",
-    //     allowNull: false,
-    //   },
-    // });
-    // Person.hasOne(Task, {
-    //   foreignKey: {
-    //     name: "owner",
-    //     allowNull: false,
-    //   },
-    // });
 
-    // Task.belongsTo(Person, {
-    //   foreignKey: {
-    //     name: "owner",
-    //     allowNull: false,
-    //   },
-    // });
-
-    // await sequelize.drop({});
-    await sequelize.sync({ force: true });
-    const newPerson = await Person.create({
-      name: "abu",
-      title: "Full-stack software engineer",
+    Task.belongsTo(User, {
+      foreignKey: {
+        allowNull: false,
+        name: "owner",
+      },
     });
-    // console.log(newPerson.dataValues);
 
-    const newTask = await Task.create({
-      title: "write clean code",
-      owner: newPerson.dataValues.id,
+    // await sequelize.sync();
+    const users = await User.findAll({
+      attributes: [sequelize.fn("sum", sequelize.col("id")), "id"],
     });
-    // console.log(newTask.dataValues);
+    console.log(JSON.stringify(users, null, 1));
 
-    // console.log((await Task.findOne({ include: [{ all: true }] })).dataValues);
-    // console.log((await Task.findOne({ include: { all: true } })).dataValues);
-    // console.log((await Task.findOne({ include: [Person] }))?.dataValues);
-
-    // const person = (await Person.findOne({ include: Task }))?.dataValues;
-    // const person = (await Person.findOne({ include: [Task] }))?.dataValues;
-
-    // const person = (
-    //   await Person.findOne({
-    //     include: {
-    //       all: true,
+    // const update = await Task.update(
+    //   { owner: 3 },
+    //   {
+    //     where: {
+    //       name: {
+    //         [Op.iLike]: "read thE %",
+    //       },
     //     },
-    //   })
-    // )?.dataValues;
+    //   },
+    //   { new: true }
+    // );
+    // console.log(update);
 
-    // const task = (
-    //   await Task.findOne({
-    //     include: {
-    //       all: true,
-    //     },
-    //   })
-    // )?.dataValues;
-
-    const person = await Person.findOne();
-    // const hisTask = await person.getTask();
-
-    const task = await Task.findOne();
-    const hisOwner = await task.getPerson();
-
-    console.log(JSON.stringify(person, null, 1));
-    console.log(JSON.stringify(task, null, 1));
-    console.log(hisOwner.toJSON());
-    // console.log(hisTask.dataValues);
-
-    // await task.destroy({ where: { title: null } });
-    // console.log(conn.config);
-
-    // const newTask = await task.create({
-    //   title: "watch the baby",
-    //   owner: "9efafc17-3b6f-4aa7-9805-feb4279dd04c",
+    // const newUser = await User.create({ firstName: "badass" });
+    // console.log(newUser);
+    // const newTask = await Task.create({
+    //   name: "read the quran",
+    //   isCompleted: true,
     // });
-    // console.log(newTask);
+    // const allUsers = await User.findAll({
+    // attributes: [
+    // ["id", "myId"],
+    // [sequelize.fn("COUNT", sequelize.col("firstName")), "name_count"],
+    // ],
+    // where: {
+    //   [Op.or]: {
+    //     id: [2, 1],
+    //   },
+    // },
+    // where: {
+    // lastName: {
+    //   [Op.iLike]: "%ga%",
+    // },
+    //     firstName: {
+    //       [Op.iLike]: "abu",
+    //     },
+    //     createdAt: {
+    //       [Op.lt]: new Date(),
+    //     },
+    //   },
+    //   include: Task,
+    // });
+    // console.log(allUsers[0].firstName);
+    // console.log(JSON.stringify(allUsers, null, 1));
 
-    // const tasks = await task.findAll();
-    // console.log(tasks);
-    // const newPerson = await person.create({ name: "aisha", title: "lookman" });
-    // console.log(newPerson);
+    // const tasks = await Task.findAndCountAll({
+    //   where: {
+    //     id: [1, 4],
+    //   },
+    //   include: {
+    //     all: true,
+    //   },
+    // });
+    // console.log(JSON.stringify(tasks, null, 1));
   } catch (err) {
-    console.error("Error:", err);
+    console.log();
+    console.log("=".repeat(71));
+    console.log("=".repeat(71));
+    console.log();
+    console.log("Error: ", err.message);
   }
 };
 
